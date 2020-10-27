@@ -8,6 +8,12 @@ const Container = styled.div`
   width: 100%;
   height: 100%;
   padding: 80px 16px;
+  p.error-text {
+    font-size: 16px;
+    line-height: 24px;
+    font-weight: 400;
+    color: #ff4D4F;
+  }
 `
 
 const Header = styled.div`
@@ -77,6 +83,7 @@ export default class Job extends React.Component {
       .then((data) => {
         const { id, name, job, last_shift } = data
         this.setState({
+          hasErrors: false,
           isLoaded: true,
           userId: id,
           userName: name,
@@ -85,7 +92,6 @@ export default class Job extends React.Component {
           lastShift: last_shift || {},
           hasActiveShift: last_shift ? last_shift.end_time === null : false
         })
-
         if (this.state.hasActiveShift) this.setState({ currentShift: last_shift })
       })
   }
@@ -94,6 +100,7 @@ export default class Job extends React.Component {
     e.preventDefault();
     const { userId, jobId } = this.state
     const url = '/api/v1/shifts';
+    const currentShift = this.state.currentShift;
 
     this.setState({
       isLoaded: false,
@@ -110,11 +117,21 @@ export default class Job extends React.Component {
     })
       .then(response => response.json())
       .then((data) => {
-        this.setState({
-          isLoaded: true,
-          hasActiveShift: true,
-          currentShift: data.shift
-        })
+        if (data.success === false) {
+          this.setState({
+            hasErrors: data.errors,
+            isLoaded: true,
+            currentShift: currentShift
+          })
+          console.log(this.state);
+        } else {
+          this.setState({
+            hasErrors: false,
+            isLoaded: true,
+            hasActiveShift: true,
+            currentShift: data.shift
+          })
+        }
       })
   }
 
@@ -135,9 +152,16 @@ export default class Job extends React.Component {
       .then(response => response.json())
       .then((data) => {
         this.setState({
+          hasErrors: false,
           isLoaded: true,
           hasActiveShift: false,
           currentShift: data.shift,
+        })
+      })
+      .catch((err) => {
+        this.setState({
+          hasErrors: "An error occured. Please try again.",
+          isLoaded: true,
         })
       })
   }
@@ -147,8 +171,8 @@ export default class Job extends React.Component {
   }
 
   renderContent() {
-    let startTime = this.formatTime(this.state.currentShift.start_time)
-    let endTime =  this.formatTime(this.state.currentShift.end_time)
+    let startTime = this.formatTime(this.state.currentShift.start_time) || "-"
+    let endTime =  this.formatTime(this.state.currentShift.end_time) || "-"
 
     return (
       <Content>
@@ -166,8 +190,7 @@ export default class Job extends React.Component {
 
   handleClick = (e) => {
     if (this.state.hasActiveShift) {
-      this.clockIn(e);
-      // this.clockOut(e);
+      this.clockOut(e);
     } else {
       this.clockIn(e);
     }
@@ -189,6 +212,7 @@ export default class Job extends React.Component {
           isLoaded={this.state.isLoaded}
           onClick={this.handleClick}
         />
+        {this.state.hasErrors && <p className="error-text">{this.state.hasErrors}</p>}
       </Container>
     );
   }
