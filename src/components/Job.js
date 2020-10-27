@@ -70,8 +70,8 @@ export default class Job extends React.Component {
   }
 
   fetchJob() {
-    console.log('fetch job...');
     const url = '/api/v1/users/1';
+
     fetch(url)
       .then(response => response.json())
       .then((data) => {
@@ -86,13 +86,7 @@ export default class Job extends React.Component {
           hasActiveShift: last_shift ? last_shift.end_time === null : false
         })
 
-        console.log('current has active shift::', this.state.hasActiveShift);
-
-        if (this.state.hasActiveShift) {
-          this.setState({ currentShift: last_shift })
-        }
-
-        console.log('fetchjob::currentShift::', this.state.currentShift);
+        if (this.state.hasActiveShift) this.setState({ currentShift: last_shift })
       })
   }
 
@@ -101,8 +95,10 @@ export default class Job extends React.Component {
     const { userId, jobId } = this.state
     const url = '/api/v1/shifts';
 
-    console.log('clocking in....');
-    this.setState({ isLoaded: false });
+    this.setState({
+      isLoaded: false,
+      currentShift: {}
+    });
 
     fetch(url, {
       method: "POST",
@@ -114,26 +110,20 @@ export default class Job extends React.Component {
     })
       .then(response => response.json())
       .then((data) => {
-        console.log(data);
-        console.log('current has active shift::', this.state.hasActiveShift);
         this.setState({
           isLoaded: true,
           hasActiveShift: true,
           currentShift: data.shift
         })
-        console.log('current has active shift::', this.state.hasActiveShift);
-        console.log('clockin::currentShift::', this.state.currentShift);
       })
   }
 
   clockOut = (e) => {
     e.preventDefault();
     const shiftId = this.state.currentShift.id
-    console.log(shiftId);
-    // const { userId, jobId } = this.state
     const url = `/api/v1/shifts/${shiftId}`;
 
-    console.log('clocking out....');
+    this.setState({ isLoaded: false });
 
     fetch(url, {
       method: "PUT",
@@ -144,40 +134,12 @@ export default class Job extends React.Component {
     })
       .then(response => response.json())
       .then((data) => {
-        console.log(data);
         this.setState({
+          isLoaded: true,
+          hasActiveShift: false,
           currentShift: data.shift,
         })
-        console.log('clockout::state::', this.state);
-        console.log('clockout::currentShift::', this.state.currentShift);
-        console.log('current has active shift::', this.state.hasActiveShift);
-        // // console.log('state:::', this.state);
-        // console.log(this.state.hasActiveShift);
-        // this.setState({
-        //   hasActiveShift: true,
-        //   currentShift: {
-        //     startTime: data.shift.start_time
-        //   }
-        // })
-        // console.log(this.state.hasActiveShift);
-        // this.setState({
-        //   isLoaded: true,
-        //   lastShift: data.shift,
-        //   activeShift: true,
-        //   currentShfit: {
-        //     startTime: data.shift.start_time,
-        //   }
-        // })
       })
-  }
-
-
-  handleClick = (e) => {
-    if (this.state.hasActiveShift) {
-      this.clockOut(e);
-    } else {
-      this.clockIn(e);
-    }
   }
 
   formatTime(time) {
@@ -187,9 +149,7 @@ export default class Job extends React.Component {
   renderContent() {
     let startTime = this.formatTime(this.state.currentShift.start_time)
     let endTime =  this.formatTime(this.state.currentShift.end_time)
-    // if (this.state.activeShift) {
-      // startTime = this.lastShift.start_time
-    // }
+
     return (
       <Content>
         <div>
@@ -204,16 +164,31 @@ export default class Job extends React.Component {
     )
   }
 
+  handleClick = (e) => {
+    if (this.state.hasActiveShift) {
+      this.clockIn(e);
+      // this.clockOut(e);
+    } else {
+      this.clockIn(e);
+    }
+  }
+
   render() {
-    const { userName, jobTitle, jobId, lastShift } = this.state;
+    const { userName, jobTitle } = this.state;
     return (
       <Container>
         <Header>
           <h3>{jobTitle}</h3>
           <p>{userName}</p>
         </Header>
-        {this.renderContent()}
-        <Button text="Clock in" onClick={this.handleClick} />
+
+        { this.renderContent() }
+
+        <Button
+          activeShift={this.state.hasActiveShift}
+          isLoaded={this.state.isLoaded}
+          onClick={this.handleClick}
+        />
       </Container>
     );
   }

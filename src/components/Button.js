@@ -14,16 +14,28 @@ const ButtonDiv = styled.button`
   background-color: #00CA7F;
   border-radius: 5px;
   box-shadow: 0 2px 2px 0 rgba(0,0,0, 0.25);
-  &:hover {
+  &:not(.loading):hover {
     filter: brightness(95%);
   }
-  &:active {
+  &:not(.loading):active {
     filter: brightness(90%);
+  }
+  &.loading {
+    background-color: #AAAAAA;
   }
 `
 
 export default function Button(props) {
+  const buttonText = !props.isLoaded ? 'Loading...'
+    : props.activeShift ? "Clock out"
+    : "Clock in"
+
   return (
-    <ButtonDiv onClick={props.onClick}>{props.text}</ButtonDiv>
+    <ButtonDiv
+      className={!props.isLoaded && 'loading'}
+      onClick={props.onClick}
+    >
+      {buttonText}
+    </ButtonDiv>
   );
 }
