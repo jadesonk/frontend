@@ -4,51 +4,50 @@ import moment from 'moment';
 import Button from '../components/Button';
 
 const Container = styled.div`
-  color: #777777;
-  width: 100%;
+  background-color: ${(props) => props.theme.whiteColor};
+  color: ${(props) => props.theme.textColor};
+  padding: 10rem 2rem;
   height: 100%;
-  padding: 80px 16px;
-  p.error-text {
-    font-size: 16px;
-    line-height: 24px;
-    font-weight: 400;
-    color: #ff4D4F;
-  }
+  font-size: 2rem;
+  font-weight: ${(props) => props.theme.font.bold};
+  line-height: 3rem;
 `
 
 const Header = styled.div`
-  margin-bottom: 36px;
+  margin-bottom: 4.5rem;
   h3 {
-    font-size: 22px;
-    line-height: 36px;
-    font-weight: 700;
+    font-size: 2.75rem;
+    line-height: 4.5rem;
     margin: 0;
   }
   p {
-    font-size: 16px;
-    line-height: 24px;
-    font-weight: 700;
-    margin: 0;
     position: relative;
     top: -6px;
+    margin: 0;
   }
 `
 
 const Content = styled.div`
   display: flex;
+  margin-bottom: 4.5rem;
   div {
     width: 50%;
     p.text-muted {
-      font-size: 16px;
-      line-height: 26px
-      font-weight: 400px;
+      line-height: 3.25rem;
+      font-weight: ${(props) => props.theme.font.regular};
+      margin: 0 0 .5rem 0;
     }
     p:not(.text-muted) {
-      font-size: 24px;
-      line-height: 24px;
-      font-weight: 700px;
+      font-size: 3rem;
+      margin: 0;
     }
   }
+`
+
+const ErrorMessage = styled.p`
+  margin: 1rem 0 0;
+  font-weight: ${(props) => props.theme.font.regular};
+  color: ${(props) => props.theme.redColor};
 `
 
 export default class Job extends React.Component {
@@ -63,21 +62,16 @@ export default class Job extends React.Component {
       jobTitle: '',
       lastShift: {},
       hasActiveShift: false,
-      currentShift: {
-        id: null,
-        start_time: null,
-        end_time: null
-      },
+      currentShift: {},
     };
   }
 
   componentDidMount() {
-    this.fetchJob()
+    this.fetchUser();
   }
 
-  fetchJob() {
+  fetchUser() {
     const url = '/api/v1/users/1';
-
     fetch(url)
       .then(response => response.json())
       .then((data) => {
@@ -93,12 +87,12 @@ export default class Job extends React.Component {
           hasActiveShift: last_shift ? last_shift.end_time === null : false
         })
         if (this.state.hasActiveShift) this.setState({ currentShift: last_shift })
-      })
+      });
   }
 
   clockIn = (e) => {
     e.preventDefault();
-    const { userId, jobId } = this.state
+    const { userId, jobId } = this.state;
     const url = '/api/v1/shifts';
     const currentShift = this.state.currentShift;
 
@@ -123,7 +117,6 @@ export default class Job extends React.Component {
             isLoaded: true,
             currentShift: currentShift
           })
-          console.log(this.state);
         } else {
           this.setState({
             hasErrors: false,
@@ -132,12 +125,12 @@ export default class Job extends React.Component {
             currentShift: data.shift
           })
         }
-      })
+      });
   }
 
   clockOut = (e) => {
     e.preventDefault();
-    const shiftId = this.state.currentShift.id
+    const shiftId = this.state.currentShift.id;
     const url = `/api/v1/shifts/${shiftId}`;
 
     this.setState({ isLoaded: false });
@@ -167,12 +160,12 @@ export default class Job extends React.Component {
   }
 
   formatTime(time) {
-    return time ? moment(time).format('h:mm a') : "-"
+    return time ? moment(time).format('h:mm a') : false
   }
 
   renderContent() {
-    let startTime = this.formatTime(this.state.currentShift.start_time) || "-"
-    let endTime =  this.formatTime(this.state.currentShift.end_time) || "-"
+    const startTime = this.formatTime(this.state.currentShift.start_time) || "-"
+    const endTime =  this.formatTime(this.state.currentShift.end_time) || "-"
 
     return (
       <Content>
@@ -189,11 +182,7 @@ export default class Job extends React.Component {
   }
 
   handleClick = (e) => {
-    if (this.state.hasActiveShift) {
-      this.clockOut(e);
-    } else {
-      this.clockIn(e);
-    }
+    this.state.hasActiveShift ? this.clockOut(e) : this.clockIn(e);
   }
 
   render() {
@@ -204,18 +193,14 @@ export default class Job extends React.Component {
           <h3>{jobTitle}</h3>
           <p>{userName}</p>
         </Header>
-
         { this.renderContent() }
-
         <Button
           activeShift={this.state.hasActiveShift}
           isLoaded={this.state.isLoaded}
           onClick={this.handleClick}
         />
-        {this.state.hasErrors && <p className="error-text">{this.state.hasErrors}</p>}
+        {this.state.hasErrors && <ErrorMessage>{this.state.hasErrors}</ErrorMessage>}
       </Container>
     );
   }
 }
-
-// static prop types and default props
